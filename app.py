@@ -19,48 +19,37 @@ def get_save_info(file):
     fp.close()
     return data
 
-# Función para obtener los precios actuales de todos los símbolos
-def get_current_prices(symbols, indicators, timeframes):
-    URL = "https://scanner.tradingview.com/crypto/scan"
-    exchange = 'BINANCE'
-    payload = {
-        "filter": {
-            "symbols": {
-                "query": {
-                    "types": [
-                        "crypto"
-                    ]
-                },
-                "tickers": symbols
-            },
-            "indicators": indicators,
-            "timeframe": timeframes
-        },
-        "columns": [
-            "close",
-            "open",
-            "high",
-            "low",
-            "volume",
-            "change"
-        ],
-        "range": {
-            "from": time.time() - 60,  # Últimos 60 segundos
-            "to": time.time()
-        }
+# Definición de la función get_indicator_temp
+def get_indicator_temp(symbolTicker, temp):
+    dict_temp = {
+        '1m': '|1',
+        '5m': '|5',
+        '15m': '|15',
+        '30m': '|30',
+        '1h': '|60',
+        '4h': '|240',
+        '1w': '|1W',
+        '1M': '|1M'
     }
+    temp_indicator = dict_temp.get(temp, '')
+    indicator_list = [f'{indicator}{temp_indicator}' for indicator in data['indicators']]
+    data = {
+        'symbols': {'tickers': [f'BINANCE:{symbolTicker}']},
+        'columns': indicator_list
+    }
+    headers = {'User-Agent': 'gustavo/2.0'}
     try:
-        response = requests.post(URL, json=payload)
+        response = requests.post(URL, json=data, headers=headers, timeout=20)
         response.raise_for_status()
-        data = response.json()
-        if 'data' in data:
-            current_prices = {item['ticker']: float(item['close']) for item in data['data']}
-        else:
-            current_prices = {symbol: 0 for symbol in symbols}
-    except requests.exceptions.RequestException as e:
-        st.error(f"Error al obtener los precios actuales: {e}")
-        current_prices = {symbol: 0 for symbol in symbols}
-    return current_prices
+    except requests.RequestException as e:
+        raise Exception(f"Error al cargar los indicadores: {e}")
+    pre_result = response.json().get("data", [])
+    oportunidad = {}
+    for item in pre_result:
+        symbol = item['s'][8:]
+        result = item['d']
+        oportunidad[symbol] = {indicator: result[idx] for idx, indicator in enumerate(data['indicators'])}
+    return oportunidad
 
 # Cargar datos
 data = get_save_info('actions.json')
@@ -71,14 +60,20 @@ st.title('Dashboard de Bots de Trading')
 # Obtener todos los símbolos únicos
 symbols = list(set(bot_info['sym'] for bot_info in data['bot'].values()))
 
-# Obtener los indicadores y temporalidades únicos
-indicators = list(set(data['indicators']))
-timeframes = list(set(bot_info['graf_temp'] for bot_info in data['bot'].values()))
-
 # Función para actualizar los precios cada minuto
 @st.cache_data
 def update_prices():
-    current_prices = get_current_prices(symbols, indicators, ','.join(timeframes))
+    current_prices = {}
+    for bot_name, bot_info in data['bot'].items():
+        try:
+            result = get_indicator_temp(bot_info['sym'], bot_info['graf_temp'])
+            if bot_info['sym'] in result:
+                current_prices[bot_info['sym']] = result[bot_info['sym']].get("close", 0)
+            else:
+                current_prices[bot_info['sym']] = 0
+        except Exception as e:
+            st.error(f"Error al obtener los precios actuales de {bot_info['sym']}: {e}")
+            current_prices[bot_info['sym']] = 0
     return current_prices
 
 # Función para crear la tabla de bots
