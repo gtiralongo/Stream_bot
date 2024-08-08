@@ -58,7 +58,7 @@ def get_current_prices(symbols, indicators, timeframes):
     return current_prices
 
 # Cargar datos
-data = get_save_info('su_archivo.json')
+data = get_save_info('actions.json')
 
 # Título de la aplicación
 st.title('Dashboard de Bots de Trading')
@@ -139,7 +139,7 @@ if selected_bot:
             })
             
             # Guardar cambios en el archivo
-            save_info(data, 'su_archivo.json')
+            save_info(data, 'actions.json')
             st.success('Cambios guardados exitosamente')
 
 # Actualizar la tabla de bots cada minuto
