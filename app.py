@@ -18,13 +18,13 @@ def get_save_info(file):
     fp.close()
     return data
 
-# Función para obtener el precio actual (esto es un ejemplo, ajústelo según su fuente de datos)
-def get_current_price(symbol):
-    # Esta es una implementación de ejemplo. Reemplácela con su propia lógica para obtener precios reales.
-    url = f"https://api.binance.us/api/v3/ticker/price?symbol={symbol}"
+# Función para obtener los precios actuales de todos los símbolos
+def get_current_prices(symbols):
+    # Esta es una implementación de ejemplo. Ajústela según su fuente de datos real.
+    url ="https://api.binance.us/api/v3/ticker/price"
     response = requests.get(url)
-    data = response.json()
-    return float(data['price'])
+    all_prices = {item['symbol']: float(item['price']) for item in response.json()}
+    return {symbol: all_prices.get(symbol, 0) for symbol in symbols}
 
 # Cargar datos
 data = get_save_info('actions.json')
@@ -32,10 +32,16 @@ data = get_save_info('actions.json')
 # Título de la aplicación
 st.title('Dashboard de Bots de Trading')
 
+# Obtener todos los símbolos únicos
+symbols = list(set(bot_info['sym'] for bot_info in data['bot'].values()))
+
+# Obtener los precios actuales para todos los símbolos
+current_prices = get_current_prices(symbols)
+
 # Crear DataFrame con todos los bots
 bots_data = []
 for bot_name, bot_info in data['bot'].items():
-    current_price = get_current_price(bot_info['sym'])
+    current_price = current_prices.get(bot_info['sym'], 0)
     if bot_info['state'] == 'SELL':
         profit_loss = (current_price - float(bot_info['valor_compra'])) / float(bot_info['valor_compra']) * 100
     else:  # state == 'BUY'
