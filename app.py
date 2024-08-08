@@ -5,7 +5,7 @@ import pandas as pd
 # Cargar los datos del JSON
 @st.cache_data
 def load_data():
-    data = json.loads('''[Su JSON aquí]''')
+    data = json.loads('actions.json')
     return data
 
 data = load_data()
