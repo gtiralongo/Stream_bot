@@ -49,16 +49,21 @@ def get_current_prices(symbols, indicators, timeframes):
             "to": time.time()
         }
     }
-    response = requests.post(URL, json=payload)
-    data = response.json()
-    if 'data' in data:
-        current_prices = {item['ticker']: float(item['close']) for item in data['data']}
-    else:
-        current_prices = {}
+    try:
+        response = requests.post(URL, json=payload)
+        response.raise_for_status()
+        data = response.json()
+        if 'data' in data:
+            current_prices = {item['ticker']: float(item['close']) for item in data['data']}
+        else:
+            current_prices = {symbol: 0 for symbol in symbols}
+    except requests.exceptions.RequestException as e:
+        st.error(f"Error al obtener los precios actuales: {e}")
+        current_prices = {symbol: 0 for symbol in symbols}
     return current_prices
 
 # Cargar datos
-data = get_save_info('actions.json')
+data = get_save_info('su_archivo.json')
 
 # Título de la aplicación
 st.title('Dashboard de Bots de Trading')
@@ -103,49 +108,12 @@ def create_bots_table(current_prices):
     return df_bots
 
 # Actualizar la tabla de bots cada minuto
-current_prices = update_prices()
-df_bots = create_bots_table(current_prices)
-
-st.subheader('Resumen de Bots')
-st.dataframe(df_bots.style.apply(lambda x: ['background-color: ' + x['Color']] * len(x), axis=1))
-
-# Seleccionar bot para modificar
-selected_bot = st.selectbox('Seleccione un bot para modificar', list(data['bot'].keys()))
-
-if selected_bot:
-    st.subheader(f'Modificar {selected_bot}')
-    bot_data = data['bot'][selected_bot]
-    
-    # Crear formulario para modificar datos del bot
-    with st.form(key='bot_form'):
-        sym = st.text_input('Símbolo', value=bot_data['sym'])
-        run = st.selectbox('Run', ['on', 'off'], index=['on', 'off'].index(bot_data['run']))
-        state = st.selectbox('Estado', ['BUY', 'SELL'], index=['BUY', 'SELL'].index(bot_data['state']))
-        graf_temp = st.selectbox('Tiempo de Gráfico', ['15m', '1h', '4h', '1d', '1w', '1M'], index=['15m', '1h', '4h', '1d', '1w', '1M'].index(bot_data['graf_temp']))
-        valor_compra = st.number_input('Valor de Compra', value=float(bot_data['valor_compra']))
-        valor_venta = st.number_input('Valor de Venta', value=float(bot_data['valor_venta']))
-        
-        submit_button = st.form_submit_button(label='Guardar Cambios')
-        
-        if submit_button:
-            # Actualizar datos del bot
-            data['bot'][selected_bot].update({
-                'sym': sym,
-                'run': run,
-                'state': state,
-                'graf_temp': graf_temp,
-                'valor_compra': str(valor_compra),
-                'valor_venta': str(valor_venta)
-            })
-            
-            # Guardar cambios en el archivo
-            save_info(data, 'actions.json')
-            st.success('Cambios guardados exitosamente')
-
-# Actualizar la tabla de bots cada minuto
 while True:
-    current_prices = update_prices()
-    df_bots = create_bots_table(current_prices)
-    st.subheader('Resumen de Bots')
-    st.dataframe(df_bots.style.apply(lambda x: ['background-color: ' + x['Color']] * len(x), axis=1))
+    try:
+        current_prices = update_prices()
+        df_bots = create_bots_table(current_prices)
+        st.subheader('Resumen de Bots')
+        st.dataframe(df_bots.style.apply(lambda x: ['background-color: ' + x['Color']] * len(x), axis=1))
+    except Exception as e:
+        st.error(f"Error al actualizar la tabla de bots: {e}")
     time.sleep(60)
