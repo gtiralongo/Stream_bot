@@ -3,12 +3,23 @@ import json
 import pandas as pd
 
 # Cargar los datos del JSON
+
+def save_info(info, file):
+    with open(file, 'r') as fp:
+        data = json.load(fp)
+    data.update(info)
+    with open(file, 'w') as fp:
+        json.dump(data, fp)
+    fp.close()
+
 @st.cache_data
-def load_data():
-    data = json.loads('actions.json')
+def get_save_info(file):
+    with open(file, 'r') as fp:
+        data = json.load(fp)
+    fp.close()
     return data
 
-data = load_data()
+data = get_save_info('actions.json')
 
 # Título de la aplicación
 st.title('Dashboard de Bots de Trading')
