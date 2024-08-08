@@ -42,7 +42,7 @@ def get_indicator_temp(symbolTicker, temp):
         response = requests.post(URL, json=data, headers=headers, timeout=20)
         response.raise_for_status()
     except requests.RequestException as e:
-        raise Exception(f"Error al cargar los indicadores: {e}")
+        raise Exception(f"Error al cargar los indicadores de {symbolTicker}: {e}")
     pre_result = response.json().get("data", [])
     oportunidad = {}
     for item in pre_result:
@@ -55,13 +55,13 @@ def get_indicator_temp(symbolTicker, temp):
 data = get_save_info('actions.json')
 
 # Título de la aplicación
-st.title('Dashboard de Bots de Trading')
+st.set_page_config(page_title='Dashboard de Bots de Trading', layout='wide')
 
 # Obtener todos los símbolos únicos
 symbols = list(set(bot_info['sym'] for bot_info in data['bot'].values()))
 
-# Función para actualizar los precios cada minuto
-@st.cache_data
+# Función para actualizar los precios
+@st.cache_data(ttl=300)  # Caché de 5 minutos
 def update_prices():
     current_prices = {}
     for bot_name, bot_info in data['bot'].items():
@@ -106,13 +106,14 @@ def create_bots_table(current_prices):
     df_bots = pd.DataFrame(bots_data)
     return df_bots
 
-# Actualizar la tabla de bots cada minuto
+# Actualizar la tabla de bots cada 5 minutos
 while True:
     try:
         current_prices = update_prices()
         df_bots = create_bots_table(current_prices)
+        st.title('Dashboard de Bots de Trading')
         st.subheader('Resumen de Bots')
         st.dataframe(df_bots.style.apply(lambda x: ['background-color: ' + x['Color']] * len(x), axis=1))
+        time.sleep(300)  # Esperar 5 minutos antes de actualizar
     except Exception as e:
         st.error(f"Error al actualizar la tabla de bots: {e}")
-    time.sleep(60)
