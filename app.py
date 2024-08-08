@@ -63,7 +63,7 @@ def get_current_prices(symbols, indicators, timeframes):
     return current_prices
 
 # Cargar datos
-data = get_save_info('su_archivo.json')
+data = get_save_info('actions.json')
 
 # Título de la aplicación
 st.title('Dashboard de Bots de Trading')
