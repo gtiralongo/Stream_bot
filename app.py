@@ -86,12 +86,16 @@ def create_bots_table(current_prices):
     bots_data = []
     for bot_name, bot_info in data['bot'].items():
         current_price = current_prices.get(bot_info['sym'], 0)
-        if bot_info['state'] == 'SELL':
-            profit_loss = (current_price - float(bot_info['valor_compra'])) / float(bot_info['valor_compra']) * 100
-            color = 'green' if current_price > float(bot_info['valor_compra']) else 'red'
-        else:  # state == 'BUY'
-            profit_loss = (float(bot_info['valor_venta']) - current_price) / current_price * 100
-            color = 'red' if current_price > float(bot_info['valor_venta']) else 'green'
+        try:
+            if bot_info['state'] == 'SELL':
+                profit_loss = (current_price - float(bot_info['valor_compra'])) / float(bot_info['valor_compra']) * 100
+                color = 'green' if current_price > float(bot_info['valor_compra']) else 'red'
+            else:  # state == 'BUY'
+                profit_loss = (float(bot_info['valor_venta']) - current_price) / current_price * 100
+                color = 'red' if current_price > float(bot_info['valor_venta']) else 'green'
+        except (ValueError, ZeroDivisionError):
+            profit_loss = 0
+            color = 'gray'
         
         bots_data.append({
             'Bot': bot_name,
