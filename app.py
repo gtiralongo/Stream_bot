@@ -93,5 +93,5 @@ if selected_bot:
             })
             
             # Guardar cambios en el archivo
-            save_info(data, 'su_archivo.json')
+            save_info(data, 'actions.json')
             st.success('Cambios guardados exitosamente')
