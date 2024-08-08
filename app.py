@@ -21,13 +21,13 @@ def get_save_info(file):
 # Función para obtener el precio actual (esto es un ejemplo, ajústelo según su fuente de datos)
 def get_current_price(symbol):
     # Esta es una implementación de ejemplo. Reemplácela con su propia lógica para obtener precios reales.
-    url = f"https://api.binance.com/api/v3/ticker/price?symbol={symbol}"
+    url = f"https://api.binance.us/api/v3/ticker/price?symbol={symbol}"
     response = requests.get(url)
     data = response.json()
     return float(data['price'])
 
 # Cargar datos
-data = get_save_info('su_archivo.json')
+data = get_save_info('actions.json')
 
 # Título de la aplicación
 st.title('Dashboard de Bots de Trading')
